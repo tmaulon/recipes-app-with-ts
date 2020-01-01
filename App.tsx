@@ -1,20 +1,18 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
-import Search from "./Components/Search";
+import { StyleSheet, Text, View, SafeAreaView } from "react-native";
+import Search from "./Screens/Search";
 
 export default function App() {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Search />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center"
+    backgroundColor: "#fff"
   }
 });
