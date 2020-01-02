@@ -17,10 +17,17 @@ export const Search = () => {
   const minimumCalories = useRef<number>(0);
   const maximumCalories = useRef<number>(5000);
   const [recipes, setRecipes] = useState<HitProps[]>([]);
+  const [searchedText, setSearchedText] = useState<string>("");
 
-  const handleResearch = async () => {
-    setRecipes(await getRecipesFromApiWithOnlySearchedText("chicken"));
-    recipes.map(item => console.log("total time : ", item.recipe.totalTime));
+  const setSerchedTextOnTextInputChange = (text: string) => {
+    setSearchedText(text);
+  };
+  const setRecipesOnResearchSubmit = async () => {
+    console.log("searchedText : ", searchedText);
+    if (searchedText.length > 0) {
+      setRecipes(await getRecipesFromApiWithOnlySearchedText(searchedText));
+      recipes.map(item => console.log("total time : ", item.recipe.totalTime));
+    }
   };
   return (
     <View style={{ marginTop: 20 }}>
@@ -30,7 +37,12 @@ export const Search = () => {
         }}
       >
         <Text> Rechercher une recette avec un ingrédient </Text>
-        <TextInput style={styles.textInput} placeholder="Nom d'ingrédient" />
+        <TextInput
+          style={styles.textInput}
+          placeholder="Nom d'ingrédient"
+          onChangeText={text => setSerchedTextOnTextInputChange(text)}
+          onSubmitEditing={setRecipesOnResearchSubmit}
+        />
       </View>
       <View
         style={{
@@ -62,7 +74,7 @@ export const Search = () => {
         </View>
         <Text style={styles.sliderValue}>{sliderValue}</Text>
       </View>
-      <Button title="Rechercher" onPress={handleResearch} />
+      <Button title="Rechercher" onPress={setRecipesOnResearchSubmit} />
 
       <FlatList
         horizontal
