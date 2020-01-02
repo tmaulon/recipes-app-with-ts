@@ -1,4 +1,4 @@
-import React, { Component, useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Text,
   View,
@@ -6,29 +6,81 @@ import {
   Slider,
   Button,
   StyleSheet,
-  FlatList
+  FlatList,
+  ActivityIndicator
 } from "react-native";
-import { RecipeItem, HitProps } from "../Components/RecipeItem";
-import { getRecipesFromApiWithOnlySearchedText } from "../Services/API/RecipeSearch";
+import { HitProps } from "../Components/RecipeItem";
+import {
+  getRecipesFromApiWithSearchedTextOnly,
+  getRecipesCountFromApiWithSearchedTextOnly
+} from "../Services/API/RecipeSearch";
 import { RecipeCardItem } from "../Components/RecipeCardItem";
 
 export const Search = () => {
   const [sliderValue, setSliderValue] = useState<number>(0);
   const minimumCalories = useRef<number>(0);
   const maximumCalories = useRef<number>(5000);
+
+  // recipes search API call
   const [recipes, setRecipes] = useState<HitProps[]>([]);
   const [searchedText, setSearchedText] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [query, setQuery] = useState<string>("");
+  const [minPageNumber, setMinPageNumber] = useState<number>(0);
+  const [lastPageNumber, setLastPageNumber] = useState<number>(0);
+  const [totalPages, setTotalPages] = useState<number>(0);
+  // const [endReached, setEndReached] = useState<boolean>(false);
 
-  const setSerchedTextOnTextInputChange = (text: string) => {
-    setSearchedText(text);
-  };
-  const setRecipesOnResearchSubmit = async () => {
-    console.log("searchedText : ", searchedText);
-    if (searchedText.length > 0) {
-      setRecipes(await getRecipesFromApiWithOnlySearchedText(searchedText));
-      recipes.map(item => console.log("total time : ", item.recipe.totalTime));
-    }
-  };
+  // const getMoreRecipesFromApiWithSearchedTextOnly = async (
+  //   query: string,
+  //   fromPageNumber: number,
+  //   toPageNumber: number
+  // ) => {
+  //   const url = `${RecipesSearchURLBase}?q=${query}&app_id=${APP_ID}&app_key=${APP_KEY}&from=${fromPageNumber}&to=${toPageNumber}`;
+  //   const response = await fetch(url);
+  //   const data = await response.json();
+  //   if (!recipes) {
+  //     console.log("not recipes !");
+  //     return;
+  //   }
+  //   return [...recipes, ...data.hits];
+  // };
+
+  // const loadRecipes = async () => {
+  //   setIsLoading(true);
+  //   const url = `${RecipesSearchURLBase}?q=${query}&app_id=${APP_ID}&app_key=${APP_KEY}&from=${minPageNumber}&to=${lastPageNumber}`;
+  //   const response = await fetch(url);
+  //   const data = await response.json();
+  //   if (data.hits) {
+  //     setRecipes([...recipes, ...data.hits]);
+  //   }
+  //   setIsLoading(false);
+  // };
+
+  // useEffect(() => {
+  //   loadRecipes();
+  // }, []);
+
+  // const onLoadMore = useCallback(() => {
+  //   loadRecipes();
+  // }, []);
+
+  useEffect(() => {
+    setMinPageNumber(0);
+    setLastPageNumber(10);
+    setTotalPages(100);
+    setRecipes([]);
+    const fetchData = async () => {
+      setIsLoading(true);
+
+      setRecipes(await getRecipesFromApiWithSearchedTextOnly(query));
+      setTotalPages(await getRecipesCountFromApiWithSearchedTextOnly(query));
+
+      setIsLoading(false);
+    };
+    fetchData();
+  }, [query]);
+
   return (
     <View style={{ marginTop: 20 }}>
       <View
@@ -36,12 +88,12 @@ export const Search = () => {
           alignItems: "center"
         }}
       >
-        <Text> Rechercher une recette avec un ingrédient </Text>
+        <Text>Rechercher une recette avec un ingrédient</Text>
         <TextInput
           style={styles.textInput}
           placeholder="Nom d'ingrédient"
-          onChangeText={text => setSerchedTextOnTextInputChange(text)}
-          onSubmitEditing={setRecipesOnResearchSubmit}
+          onChangeText={text => setSearchedText(text)}
+          onSubmitEditing={() => setQuery(searchedText)}
         />
       </View>
       <View
@@ -74,15 +126,35 @@ export const Search = () => {
         </View>
         <Text style={styles.sliderValue}>{sliderValue}</Text>
       </View>
-      <Button title="Rechercher" onPress={setRecipesOnResearchSubmit} />
+      <Button title="Rechercher" onPress={() => setQuery(searchedText)} />
 
-      <FlatList
-        horizontal
-        data={recipes}
-        keyExtractor={(item, index) => `${item.recipe.uri}-${index}`}
-        // renderItem={({ item }) => <RecipeItem recipe={item.recipe} />}
-        renderItem={({ item }) => <RecipeCardItem recipe={item.recipe} />}
-      />
+      {isLoading ? (
+        <View style={styles.loading_container}>
+          <ActivityIndicator size="large" />
+        </View>
+      ) : (
+        recipes && (
+          <FlatList
+            horizontal
+            data={recipes}
+            keyExtractor={(item, index) => `${item.recipe.uri}-${index}`}
+            renderItem={({ item }) => <RecipeCardItem recipe={item.recipe} />}
+            onEndReachedThreshold={0.5}
+            onEndReached={() => {
+              console.log("end reached");
+
+              // onEndReached={async () => {
+              // TODO load more
+              // setIsLoading(true);
+              // setRecipes([
+              //   ...recipes,
+              //   await getMoreRecipesFromApiWithSearchedTextOnly(query, 10, 20)
+              // ]);
+              // setIsLoading(false);
+            }}
+          />
+        )
+      )}
     </View>
   );
 };
@@ -120,6 +192,15 @@ const styles = StyleSheet.create({
     color: "rgb(252, 228, 149)",
     fontWeight: "bold",
     marginTop: 15
+  },
+  loading_container: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 100,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center"
   }
 });
 
