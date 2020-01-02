@@ -77,6 +77,14 @@ export interface HitProps {
   bought?: boolean;
   recipe: RecipeDataProps;
 }
+export interface RecipeSearchDataProps {
+  q?: string;
+  from?: number;
+  to?: number;
+  more?: boolean;
+  count: number;
+  hits: HitProps[];
+}
 
 export const RecipeItem: React.FC<HitProps> = ({
   bookmarked,
@@ -139,8 +147,6 @@ const styles = StyleSheet.create({
   main_container: {
     flex: 1,
     minHeight: "100%",
-    // height: 300,
-    // maxHeight: 300,
     flexDirection: "row"
   },
   image: {
