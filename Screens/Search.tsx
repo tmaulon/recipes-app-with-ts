@@ -12,7 +12,8 @@ import {
 import { HitProps } from "../Components/RecipeItem";
 import {
   getRecipesFromApiWithSearchedTextOnly,
-  getRecipesCountFromApiWithSearchedTextOnly
+  getRecipesCountFromApiWithSearchedTextOnly,
+  getMoreRecipesFromApiWithSearchedTextOnly
 } from "../Services/API/RecipeSearch";
 import { RecipeCardItem } from "../Components/RecipeCardItem";
 
@@ -57,13 +58,22 @@ export const Search = () => {
   //   setIsLoading(false);
   // };
 
-  // useEffect(() => {
-  //   loadRecipes();
-  // }, []);
-
-  // const onLoadMore = useCallback(() => {
-  //   loadRecipes();
-  // }, []);
+  const loadMore = async () => {
+    // TODO FIX load more
+    console.log("end reached");
+    setIsLoading(true);
+    setMinPageNumber(lastPageNumber);
+    setLastPageNumber(lastPageNumber + 10);
+    console.log("minpage, lastpage :", minPageNumber, lastPageNumber);
+    console.log("recipes :", recipes);
+    const nextRecipes = await getMoreRecipesFromApiWithSearchedTextOnly(
+      query,
+      minPageNumber,
+      lastPageNumber
+    );
+    setRecipes([...recipes, ...nextRecipes]);
+    setIsLoading(false);
+  };
 
   useEffect(() => {
     setMinPageNumber(0);
@@ -140,18 +150,8 @@ export const Search = () => {
             keyExtractor={(item, index) => `${item.recipe.uri}-${index}`}
             renderItem={({ item }) => <RecipeCardItem recipe={item.recipe} />}
             onEndReachedThreshold={0.5}
-            onEndReached={() => {
-              console.log("end reached");
-
-              // onEndReached={async () => {
-              // TODO load more
-              // setIsLoading(true);
-              // setRecipes([
-              //   ...recipes,
-              //   await getMoreRecipesFromApiWithSearchedTextOnly(query, 10, 20)
-              // ]);
-              // setIsLoading(false);
-            }}
+            onEndReached={loadMore}
+            initialNumToRender={10}
           />
         )
       )}
